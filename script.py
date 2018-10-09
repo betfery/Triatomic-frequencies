@@ -5,7 +5,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.cm as cm
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def parseOutputs(filepath):
@@ -26,20 +27,24 @@ def parseOutputs(filepath):
     return (float(r), float(theta), float(energy))
 
 
-def surfacePlot(xyzPoints):
+def surfacePlot(X, Y, Z):
     """Plots 3D plot given list of xyz points
 
     """
 
     ax = plt.axes(projection='3d')
-    ax.plot_trisurf(xyzPoints[0],
-                    xyzPoints[1],
-                    xyzPoints[2])
+    ax.set_xlabel('r / Angstroms')
+    ax.set_ylabel('Theta / degrees')
+    ax.set_zlabel('Energy / Hartree')
+    ax.set_title('Potential Energy Surface')
+    plt.tight_layout()
+    ax.plot_trisurf(X, Y, Z,
+                    cmap=cm.viridis)
     plt.show()
 
 
 def main():
-    PATH = './H2Ooutfiles/'
+    PATH = './H2Soutfiles/'
     xyz = ([], [], [])
     for file in os.listdir(PATH):
         filepath = PATH + file
@@ -47,7 +52,7 @@ def main():
         xyz[0].append(points[0])
         xyz[1].append(points[1])
         xyz[2].append(points[2])
-    surfacePlot(xyz)
+    surfacePlot(*xyz)
 
 
 if __name__ == '__main__':
