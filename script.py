@@ -31,8 +31,11 @@ def surfacePlot(X, Y, Z):
     """Plots 3D plot given list of xyz points
 
     """
-
+    tx, ty, tz, rx, ry, rz = fitQuadratic(X, Y, Z)
     ax = plt.axes(projection='3d')
+    ax.plot(tx, ty, tz)
+    print(tx, ty, tz)
+    ax.plot(rx, ry, rz)
     ax.set_xlabel('r / Angstroms')
     ax.set_ylabel('Theta / degrees')
     ax.set_zlabel('Energy / Hartree')
@@ -40,7 +43,54 @@ def surfacePlot(X, Y, Z):
     plt.tight_layout()
     ax.plot_trisurf(X, Y, Z,
                     cmap=cm.viridis)
+#    plt.axis([tx[0]-0.15, tx[-1]+0.15,
+#            ty[0], ty[-1]])
     plt.show()
+
+
+def fitQuadratic(X, Y, Z):
+    """Fits a quadratic potential around minima of given data
+
+
+    """
+    n = 0
+    while X[n] == X[0]: n = n + 1
+
+    minZ, minPos = min(Z), np.argmin(Z)
+    minX, minY = X[minPos], Y[minPos]
+    print(f'The optimized geometry is at ({minX},{minY}) with E={minZ:.3e}')
+
+    xr = X[minPos - n::n]
+    xr = xr[:3]
+    zr = Z[minPos - n::n]
+    zr = zr[:3]
+    d = np.polynomial.polynomial.polyfit(xr, zr, np.arange(0, 2, 1))
+
+
+    yt = Y[minPos-5:minPos+5]
+    zt = Z[minPos-5:minPos+5]
+    ax = plt.axes()
+    ax.plot(yt,zt)
+    p = np.polynomial.polynomial.polyfit(yt, zt, np.arange(0, 2, 1))
+    print(p[1])
+
+    xR = np.linspace(xr[0], xr[-1], 100)
+    yR = minY * np.ones(100)
+    zR = d[1]*(xR-minX)*(xR-minX) + d[0]
+
+    xT = minX * np.ones(100)
+    yT = np.linspace(yt[0], yt[-1], 100)
+    zT = p[1]*(yT-minY)*(yT-minY) + p[0]
+    ax.plot(yT, zT)
+
+    plt.show()
+
+    print('Potential for constant theta is '
+          f'E = {d[1] :+.3e}r^2 {d[0] :+.3e} ')
+    print('Potential for constant r is '
+          f'E = {p[1] :+.3e}r^2 {p[0] :+.3e} ')
+
+    return xT, yT, zT, xR, yR, zR
 
 
 def main():
@@ -53,7 +103,6 @@ def main():
         xyz[1].append(points[1])
         xyz[2].append(points[2])
     surfacePlot(*xyz)
-
 
 if __name__ == '__main__':
     main()
