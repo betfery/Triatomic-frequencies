@@ -8,7 +8,8 @@ Usage:
 Script generates the potential surface and potential wells along
 the degrees of freedom (can be switched off in script).
 
-Additionaly outputs the optimum geometry, potential details and vibrational frequencies
+Additionaly outputs the optimum geometry,
+potential details and vibrational frequencies
 
 """
 
@@ -122,7 +123,8 @@ def fitQuadratic(X, Y, Z, validate='True'):
     freqT = math.sqrt(2*p[0]*Const['Hartree']/(0.5*Const['m_u']))\
         / (2*math.pi*3e10*minX*1e-10)
 
-    print(f'The optimized geometry is at ({minX}r/Angstroms,{minY}theta) with E = {minZ:.3e} Hartree')
+    print(f'The optimized geometry is at ({minX}r/Angstroms, {minY}theta)',
+          f'with E = {minZ:.3e} Hartree')
     print('Potential for constant theta (around Emin) is '
           f'E = {d[0]:+.3e}r^2{d[1]:+.3e}r{d[2]:+.3e} '
           f'with stretching frequency: {freqR:.1f} 1/cm ')
@@ -134,7 +136,7 @@ def fitQuadratic(X, Y, Z, validate='True'):
 
 
 def main():
-    PATH = './H2Ooutfiles/'  #default
+    PATH = './H2Ooutfiles/'  # default
     files = []
 
     args = sys.argv[1:]
