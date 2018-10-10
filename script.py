@@ -118,6 +118,7 @@ def fitQuadratic(X, Y, Z, validate='True'):
 
         plt.show()
 
+<<<<<<< HEAD
     freqR = math.sqrt(2*d[0]*Const['Hartree']*1e20
                       / (2*Const['m_u'])
                       )\
@@ -126,7 +127,12 @@ def fitQuadratic(X, Y, Z, validate='True'):
     freqT = math.sqrt(2*p[0]*Const['Hartree']
                       / (minX*minX*1e-20*0.5*Const['m_u'])
                       )\
+=======
+    freqR = math.sqrt(2*d[0]*Const['Hartree']*1e20/(2*Const['m_u']))\
+>>>>>>> eb827636cfcaab1c7a2434b3ddda9c7b4ea8db1f
         / (2*math.pi*3e10)
+    freqT = math.sqrt(2*p[0]*Const['Hartree']/(0.5*Const['m_u']))\
+        / (2*math.pi*3e10*minX*1e-10)
 
     print(f'The optimized geometry is at ({minX}r/Angstroms, {minY}theta)',
           f'with E = {minZ:.3e} Hartree')
