@@ -1,4 +1,14 @@
-"""To be added
+"""Script to visualise potential surface from Gaussian output
+
+Usage:
+    $python3 script.py path/to/outputfiles/
+
+    if none specified opts to ./H2Ooutfiles/
+
+Script generates the potential surface and potential wells along
+the degrees of freedom (can be switched off in script).
+
+Additionaly outputs the optimum geometry, potential details and vibrational frequencies
 
 """
 
@@ -7,11 +17,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import math
-# from mpl_toolkits.mplot3d import Axes3D
+import sys
+from mpl_toolkits.mplot3d import Axes3D  # side effect import
+
 
 Const = {'m_u': 1.66054e-27,
          'Hartree': 4.35974e-18}
-validate = True
 
 
 def parseOutputs(filepath):
@@ -40,7 +51,7 @@ def surfacePlot(X, Y, Z):
     Adds lines to show the potential well along r and theta.
     """
 
-    tx, ty, tz, rx, ry, rz = fitQuadratic(X, Y, Z, validate)
+    tx, ty, tz, rx, ry, rz = fitQuadratic(X, Y, Z)
 
     ax = plt.axes(projection='3d')
     ax.plot(tx, ty, tz)
@@ -58,10 +69,11 @@ def surfacePlot(X, Y, Z):
     plt.show()
 
 
-def fitQuadratic(X, Y, Z, validate=True):
+def fitQuadratic(X, Y, Z, validate='True'):
     """Fits a quadratic potential well around minima of given data
 
     Produces two graphs, along each axis, to validate the fit.
+    To switch off change the validate parameter to False
     """
     n = 0  # determines the offset for r's
     while X[n] == X[0]:
@@ -105,12 +117,12 @@ def fitQuadratic(X, Y, Z, validate=True):
 
         plt.show()
 
-    freqR = math.sqrt(d[0]*Const['Hartree']*1e20/(2*Const['m_u']))\
+    freqR = math.sqrt(2*d[0]*Const['Hartree']*1e20/(2*Const['m_u']))\
         / (2*math.pi*3e10)
-    freqT = math.sqrt(p[0]*Const['Hartree']/(0.5e-20*minX*minX*Const['m_u']))\
-        / (2*math.pi*3e10)
+    freqT = math.sqrt(2*p[0]*Const['Hartree']/(0.5*Const['m_u']))\
+        / (2*math.pi*3e10*minX*1e-10)
 
-    print(f'The optimized geometry is at ({minX},{minY}) with E={minZ:.3e}')
+    print(f'The optimized geometry is at ({minX}r/Angstroms,{minY}theta) with E = {minZ:.3e} Hartree')
     print('Potential for constant theta (around Emin) is '
           f'E = {d[0]:+.3e}r^2{d[1]:+.3e}r{d[2]:+.3e} '
           f'with stretching frequency: {freqR:.1f} 1/cm ')
@@ -122,9 +134,24 @@ def fitQuadratic(X, Y, Z, validate=True):
 
 
 def main():
-    PATH = './H2Ooutfiles/'
+    PATH = './H2Ooutfiles/'  #default
+    files = []
+
+    args = sys.argv[1:]
+    if len(args) == 1:
+        try:
+            PATH = args[0]
+            files = os.listdir(PATH)
+        except FileNotFoundError:
+            print('Wrong directory, using default ./H2Ooutfiles/')
+            PATH = './H2Ooutfiles/'
+            files = os.listdir(PATH)
+    else:
+        print('No path provided, using default ./H2Ooutfiles/')
+        files = os.listdir(PATH)
+
     xyz = ([], [], [])
-    for file in os.listdir(PATH):
+    for file in files:
         filepath = PATH + file
         points = parseOutputs(filepath)
         xyz[0].append(points[0])
