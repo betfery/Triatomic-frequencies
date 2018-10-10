@@ -6,34 +6,41 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from mpl_toolkits.mplot3d import Axes3D
+import math
+# from mpl_toolkits.mplot3d import Axes3D
+
+Const = {'m_u': 1.66054e-27,
+         'Hartree': 4.35974e-18}
+validate = True
 
 
 def parseOutputs(filepath):
-    """Reads the file, returns energy and geometry
+    """Reads the file, returns energy from file and geometry from name.
 
     """
 
     file = filepath.split('/')[-1]
     r = file.split('r')[1].split('theta')[0]
     theta = file.split('r')[1].split('theta')[1].split('.out')[0]
+
     f = open(filepath, 'r')
+
     energy = 0
     for line in f:
         if 'SCF Done:' in line:
             energy = line.split()[4]
     f.close()
 
-    return (float(r), float(theta), float(energy))
+    return float(r), float(theta), float(energy)
 
 
 def surfacePlot(X, Y, Z):
     """Plots 3D plot given list of xyz points
 
     Adds lines to show the potential well along r and theta.
-
     """
-    tx, ty, tz, rx, ry, rz = fitQuadratic(X, Y, Z)
+
+    tx, ty, tz, rx, ry, rz = fitQuadratic(X, Y, Z, validate)
 
     ax = plt.axes(projection='3d')
     ax.plot(tx, ty, tz)
@@ -48,55 +55,68 @@ def surfacePlot(X, Y, Z):
     ax.plot_trisurf(X, Y, Z,
                     cmap=cm.viridis)
 
-#    plt.axis([tx[0]-0.15, tx[-1]+0.15,
-#           ty[0], ty[-1]])
-
     plt.show()
 
 
-def fitQuadratic(X, Y, Z):
+def fitQuadratic(X, Y, Z, validate=True):
     """Fits a quadratic potential well around minima of given data
 
-
+    Produces two graphs, along each axis, to validate the fit.
     """
-    n = 0
-    while X[n] == X[0]: n = n + 1
+    n = 0  # determines the offset for r's
+    while X[n] == X[0]:
+        n = n + 1
 
     minZ, minPos = min(Z), np.argmin(Z)
     minX, minY = X[minPos], Y[minPos]
-    print(f'The optimized geometry is at ({minX},{minY}) with E={minZ:.3e}')
 
-    xr = X[minPos - n::n]
-    xr = xr[:3]
-    xr[:] = [x - minX for x in xr]
-    zr = Z[minPos - n::n]
-    zr = zr[:3]
-    d = np.polynomial.polynomial.polyfit(xr, zr, np.arange(0, 2, 1))
-
+    xr = X[minPos - 3*n::n]
+    xr = xr[:7]
+    zr = Z[minPos - 3*n::n]
+    zr = zr[:7]
+    d = np.polyfit(xr, zr, 2)
 
     yt = Y[minPos-5:minPos+5]
-    yt[:] = [y - minY for y in yt]
     zt = Z[minPos-5:minPos+5]
-    ax = plt.axes()
-    p = np.polynomial.polynomial.polyfit(yt, zt, np.arange(0, 2, 1))
-    p[1] = -p[1]
+    p = np.polyfit(yt, zt, 2)
 
-    xR = np.linspace(xr[0], xr[-1], 100) + minX
+    xR = np.linspace(xr[0], xr[-1], 100)
     yR = minY * np.ones(100)
-    zR = d[1]*(xR-minX)*(xR-minX) + d[0]
+    zR = d[0]*xR*xR + d[1]*xR + d[2]
 
     xT = minX * np.ones(100)
-    yT = np.linspace(yt[0], yt[-1], 100) + minY
-    zT = p[1]*(yT-minY)*(yT-minY) + p[0]
-    ax.plot(yt, zt)
-    ax.plot(yT-minY, zT)
+    yT = np.linspace(yt[0], yt[-1], 100)
+    zT = p[0]*yT*yT + p[1]*yT + p[2]
 
-    plt.show()
+    if validate:
+        plt.subplot(2, 1, 1)
+        plt.plot(xr, zr, 'o-')
+        plt.plot(xR, zR)
+        plt.title('Potential wells along axis')
+        plt.ylabel('Along theta axis')
+        plt.xlabel('r')
+        plt.tight_layout()
 
-    print('Potential for constant theta is '
-          f'E = {d[1] :+.3e}(t-t0)^2 {d[0] :+.3e} ')
-    print('Potential for constant r is '
-          f'E = {p[1] :+.3e}(r-r0)^2 {p[0] :+.3e} ')
+        plt.subplot(2, 1, 2)
+        plt.plot(yt, zt, 'o-')
+        plt.plot(yT, zT)
+        plt.ylabel('Along r axis')
+        plt.xlabel('theta')
+
+        plt.show()
+
+    freqR = math.sqrt(d[0]*Const['Hartree']*1e20/(2*Const['m_u']))\
+        / (2*math.pi*3e10)
+    freqT = math.sqrt(p[0]*Const['Hartree']/(0.5e-20*minX*minX*Const['m_u']))\
+        / (2*math.pi*3e10)
+
+    print(f'The optimized geometry is at ({minX},{minY}) with E={minZ:.3e}')
+    print('Potential for constant theta (around Emin) is '
+          f'E = {d[0]:+.3e}r^2{d[1]:+.3e}r{d[2]:+.3e} '
+          f'with stretching frequency: {freqR:.1f} 1/cm ')
+    print('Potential for constant r (around Emin) is '
+          f'E = {p[0]:+.3e}t^2{p[1]:+.3e}t{p[2]:+.3e} '
+          f'with bending frequency: {freqT:.1f} 1/cm')
 
     return xT, yT, zT, xR, yR, zR
 
@@ -111,6 +131,7 @@ def main():
         xyz[1].append(points[1])
         xyz[2].append(points[2])
     surfacePlot(*xyz)
+
 
 if __name__ == '__main__':
     main()
