@@ -70,7 +70,7 @@ def surfacePlot(X, Y, Z):
     plt.show()
 
 
-def fitQuadratic(X, Y, Z, validate='True'):
+def fitQuadratic(X, Y, Z, validate=True):
     """Fits a quadratic potential well around minima of given data
 
     Produces two graphs, along each axis, to validate the fit.
@@ -83,16 +83,19 @@ def fitQuadratic(X, Y, Z, validate='True'):
     minZ, minPos = min(Z), np.argmin(Z)
     minX, minY = X[minPos], Y[minPos]
 
+    # fits the potential along theta
     xr = X[minPos - 3*n::n]
     xr = xr[:7]
     zr = Z[minPos - 3*n::n]
     zr = zr[:7]
     d = np.polyfit(xr, zr, 2)
 
+    # fits the potential along r
     yt = Y[minPos-5:minPos+5]
     zt = Z[minPos-5:minPos+5]
     p = np.polyfit(yt, zt, 2)
 
+    # generates points for 3d plot
     xR = np.linspace(xr[0], xr[-1], 100)
     yR = minY * np.ones(100)
     zR = d[0]*xR*xR + d[1]*xR + d[2]
@@ -101,7 +104,7 @@ def fitQuadratic(X, Y, Z, validate='True'):
     yT = np.linspace(yt[0], yt[-1], 100)
     zT = p[0]*yT*yT + p[1]*yT + p[2]
 
-    if validate:
+    if validate:  # Plots to show how well the fit is
         plt.subplot(2, 1, 1)
         plt.plot(xr, zr, 'o-')
         plt.plot(xR, zR)
@@ -169,3 +172,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
